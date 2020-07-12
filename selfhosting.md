@@ -129,7 +129,10 @@ details. You must fill in `baseURL` and all details under
 
 Again, use the `application.yml` file from this repo.
 
-Restart Lavalink to apply changes to that file.
+Create a password for the Lavalink server, and put it in the file
+where directed.
+
+Restart Lavalink to apply changes.
 
 ### Database setup
 
