@@ -2,16 +2,16 @@
 
 ## Please note
 
-Amanda was not originally designed as an open-source project, and was
-not designed with selfhosting as a goal. This code is published for
+Amanda was not originally designed as an open-source project. This code is published for
 transparency, rather than to encourage people to run it themselves.
-We'd really rather you use the official Amanda for day-to-day
-activity. Nevertheless, the process to get a copy of Amanda up and
+You should use the official Amanda (https://amanda.moe/to/add) for day-to-day
+use as it is against the license to self host unmodified versions of Amanda.
+Nevertheless, the process to get a copy of Amanda up and
 running on your own machines is documented here, for those who want it.
 
 Please read the entire file before actually doing anything. You may find
 that a later step, and as such the entire guide, is impossible for you
-to complete, so reading it first will save you time by not attempting
+to complete; Therefore, reading it first will save you time by not attempting
 the previous steps first.
 
 ## Register
@@ -40,11 +40,6 @@ Sign up for the YouTube API and generate a key.
 
 Get a [weeb.sh](https://weeb.sh/) API token, somehow.
 
-### Pannous Jeannie API
-
-This is for the AI module. Let us know if you manage to figure out how
-to get an API token.
-
 ## Services
 
 Amanda requires several components which must all be installed
@@ -64,16 +59,37 @@ in the same datacentre, will be great.
 
 Make sure the database is set to use UTF-8.
 
+### Redis
+
+Amanda, by default, caches some Objects sent by Discord in Redis as a
+form of semi-persistent storage for all worker nodes to access.
+
+It is highly recommended that you put Redis on a machine with at least 8GB
+of RAM. Having a CPU with good single core performance is optional, but
+strongly recommended. the volume of data sent by Discord in the form of GUILD_CREATE
+payloads on gateway identify can starve the instance of resources on lower end hardware.
+
+No additional setup is required, but it is recommended to protect the instance with a password
+and change the HTTP port Redis' web server uses.
+
+### RabbitMQ
+
+If you're lucky enough to get RabbitMQ to install, Amanda's cache library depends on an AMQP
+message broker. (the hardest part is getting erlang to install. If you already have erlang installed,
+you should have relative ease installing RabbitMQ.)
+
 ### Lavalink
 
 Amanda uses Lavalink as its audio processor. [Download an appropriate
-version][lavalink] of Lavalink, or build your own, and run it on a server. It does
+version][lavalink] of Lavalink, or build your own, and run it on a server. PLEASE NOTE
+that as of writing this, audio filters has not been merged from Lavalink/dev into master
+You should install/build a version which supports OP filters. It does
 not need to be geographically close to the bot host. You should put it
 close to the Discord voice regions that you want to stream to.
 
 [lavalink]: https://github.com/Frederikam/Lavalink/blob/master/README.md#server-configuration
 
-Use the provided `application.yml` file.
+You may use the provided `application.yml` file.
 
 ### Invidious
 
@@ -89,24 +105,27 @@ Lavalink.
 When using Invidious, the Invidious node must be in the same country
 (well, the country detected by YouTube, which isn't very good) as the
 Lavalink node that will play it, otherwise you will encounter problems
-with region blocking on some songs. We suggest you run Invidious on the
-same machine as the Lavalink node.
+with region blocking on some songs. We suggest you run Invidious on a machine
+in the same data center as the Lavalink node.
 
 You can either [build and run regular Invidious][invidious], but this
 can be difficult to install and run, so you can instead use [Cadence's
-ytdi project][ytdi] which runs different code, but mirrors the same API
-in a mostly-compatible way. We suggest you use ytdi.
+Second project][second] which runs different code, but mirrors the same API
+in a mostly-compatible way and uses significantly less resources.
+We suggest you use Second.
 
 [invidious]: https://github.com/omarroth/invidious
-[ytdi]: https://github.com/cloudrac3r/youtubedl-invidious
+[second]: https://git.sr.ht/~cadence/Second
 
-There are also some [public Invidious servers][public servers] that you
+There are also some [public Invidious servers][pubinvidious] that you
 can use if you want Invidious without selfhosting. Just make sure you
 use ones in the same country as your Lavalink node.
 
+[pubinvidious]: https://github.com/iv-org/documentation/blob/master/Invidious-Instances.md
+
 ### Bot
 
-Clone the bot repo.
+Clone Amanda's repo.
 
 Run `npm install`.
 
@@ -117,9 +136,7 @@ With everything installed and running, you now have to configure it.
 ### Bot config files
 
 Open `config.sample.js` in the bot repo and fill in the details. You
-must fill in `bot_token`, `mysql_password`, `yt_api_key`,
-`chewey_api_key`, `lavalink_password`, `weeb_api_key`, `machine_id`,
-`mysql_domain`.
+must fill in everything.
 
 Then, open `constants.js` in the bot repo and fill in some more
 details. You must fill in `baseURL` and all details under
@@ -155,12 +172,11 @@ Everything is now set up.
 To start Amanda, follow these steps:
 
 1. Make sure all the services are running.
-1. Change to the base directory of the cloned bot repo.
+1. Open a terminal and change to the base directory of the cloned bot repo.
 1. Run `npm run website` to start the web process, which also doubles as
-   a shard coordinator.
-1. Open another terminal, and again change to the base directory of the
-   repo.
-1. Run `npm run start` to start without sharding.
-
-You can alternatively run `npm run shards` to start multiple shards in
-the configuration from `config.js`, but you shouldn't need to do this.
+   a cluster coordinator.
+1. Open 3 other terminals, and again change to the base directory of the
+   repo for each and run the commands below, each in a separate terminal.
+1. Run `node workers/rest.js`
+1. Run `node workers/cache.js`
+1. Run `npm run start`
